@@ -1,21 +1,50 @@
-# Profile Analyzer
+# Profile Analyser
 
-## Deployment Instructions for Streamlit Cloud
+Paste a LinkedIn profile link and a job description. The app:
 
-1. **Create a Streamlit Cloud Account**: If you don’t have an account, sign up at [Streamlit Cloud](https://streamlit.io/cloud).
+1. Pulls the full profile JSON through an Apify actor (`harvestapi/linkedin-profile-scraper`, no LinkedIn login needed).
+2. Has Gemini rate the profile against the job description across six categories.
+3. Lists concrete, ready-to-paste profile fixes (headline, About, per-section changes, missing keywords).
+4. Generates a tailored one-page resume as DOCX, PDF or Markdown, using only facts from the profile.
 
-2. **Link Your GitHub Repository**: Once logged in, connect your GitHub account and select the `5nss/profile_analyser` repository.
+## Run locally
 
-3. **Deploy Your App**:
-   - Click on the "New App" button.
-   - Choose the branch (default is `main`) and specify the path to your Streamlit file (e.g., `app.py`).
-   - Click on "Deploy."
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-4. **Set Environment Variables (if needed)**: If your app requires any environment variables, set them in the Streamlit Cloud app settings.
+## Keys
 
-5. **After Deployment**: Once the app is deployed, Streamlit Cloud provides a URL to access your app. 
+Copy `.env.example` to `.env` and fill in:
 
-6. **Updates**: To update your app, push changes to the GitHub repository, and Streamlit Cloud will automatically redeploy the app.
+| Name | Where to get it |
+| --- | --- |
+| `GEMINI_API_KEY` | https://aistudio.google.com/apikey |
+| `APIFY_API_TOKEN` | Apify Console → Settings → API & Integrations |
 
-## Additional Notes
-- Make sure your `requirements.txt` file is present in the repository to install the necessary packages for the deployment.
+Optional: `GEMINI_MODEL` (default: newest stable Flash model your key can use) and `APIFY_ACTOR_ID`.
+
+Each profile scrape costs about $0.004 of Apify credit; results are cached for an hour per URL.
+
+## Layout
+
+| File | Purpose |
+| --- | --- |
+| `app.py` | Streamlit UI |
+| `core/scraper.py` | Apify call, URL validation, JSON slimming |
+| `core/analyzer.py` | Gemini prompts and structured-output calls |
+| `core/schemas.py` | Pydantic shapes Gemini must return |
+| `core/scoring.py` | Overall score from category scores |
+| `core/resume_builder.py` | Markdown / DOCX / PDF rendering |
+
+## Streamlit Cloud
+
+Deploy `app.py` and add the two keys under **App settings → Secrets**:
+
+```toml
+GEMINI_API_KEY = "..."
+APIFY_API_TOKEN = "..."
+```
